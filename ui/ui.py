@@ -17,7 +17,6 @@ from matplotlib.colors import Normalize, to_hex
 from matplotlib.cm import get_cmap
 from matplotlib.pyplot import colorbar
 from matplotlib.cm import ScalarMappable
-from copy import deepcopy
 
 
 parser = argparse.ArgumentParser()
@@ -40,11 +39,12 @@ class Element(L.polygon):
     def _signal(self):
         self.signal.emit(self)
 
-    def __init__(self, shape, element_number, elevation, signal):
+    def __init__(self, shape, element_number, elevation, location, signal):
         super().__init__(shape, {'weight': self.default_weight, 'fillOpacity': 0.8})
         self.signal = signal
         self.number = element_number
         self.elevation = elevation
+        self.location = location
         self.setProperty('element_number', element_number)
         self._connectEventToSignal('click', '_signal')
 
@@ -318,7 +318,8 @@ class App(QMainWindow):
         dialog = QFileDialog.getSaveFileName(directory=directory, filter="CSV Files (*.csv)")
         if dialog[0] != '':
             with open(dialog[0], 'w') as f:
-                f.write('{} at {}\n'.format(self.variables[0].long_name, self.element.number))
+                f.write('{} at {} ({},{})\n'.format(self.variables[0].long_name, self.element.number,
+                                                    self.element.location[0], self.element.location[1]))
             array.to_csv(dialog[0], index=False, mode='a')
 
     def set_time(self, time):
@@ -426,7 +427,7 @@ class PlotCanvas(FigureCanvas):
         self.axes.relim()
         self.axes.autoscale_view()
 
-        self.axes.set_title('Element {} - {:.2f} m'.format(element.number, element.elevation))
+        self.axes.set_title('Element {} - {:.2f} m {}'.format(element.number, element.elevation, element.location))
         self.axes.set_ylabel(variables[0].long_name)
         self.axes.set_xlabel('Time')
         if len(self.lines) > 1:
@@ -524,8 +525,10 @@ class MapCanvas(QFrame):
         prog = 0
         for geom, number in zip(geoms, model.hdf.element_numbers):
             coords = [list(reversed(coord)) for coord in geom['coordinates'][0]]
+            lat = np.mean([coord[0] for coord in coords[:-1]]).round(3)
+            lon = np.mean([coord[1] for coord in coords[:-1]]).round(3)
             elevation = model.hdf.elevations[number-1]
-            element = Element(coords, number, elevation, self.clickedElement)
+            element = Element(coords, number, elevation, (lat, lon), self.clickedElement)
             self.elements.append(element)
             if number in model.hdf.land_elements:
                 self.land_elements.append(element)
