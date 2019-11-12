@@ -1,6 +1,6 @@
 import sys
-from shetran.hdf import Geometries
-from shetran.model import Model
+from shetranio.hdf import Geometries
+from shetranio.model import Model
 import argparse
 from pyqtlet import L, MapWidget
 import numpy as np
