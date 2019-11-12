@@ -86,6 +86,9 @@ class App(QMainWindow):
         self.difference.clicked.connect(self.show_difference_dropdown)
 
         self.differenceDropDown = QComboBox()
+        self.differenceDropDown.setEnabled(False)
+
+        self.differenceDropDown.activated.connect(self.set_model)
 
         self.add_model()
         self.model = self.models[0]
@@ -228,7 +231,9 @@ class App(QMainWindow):
             break
 
         if self.droppedPath.endswith('.csv'):
-            self.plotCanvas.update_data(self.element, self.variables, self.droppedPath)
+            self.plotCanvas.update_data(self.element, variables=self.variables, series_path=self.droppedPath)
+            self.difference.setChecked(False)
+            self.differenceDropDown.setEnabled(False)
         elif self.droppedPath.endswith('.xml'):
             self.add_model()
 
@@ -251,12 +256,12 @@ class App(QMainWindow):
             text, ok = QInputDialog.getText(self, "Model Name", "Enter a model name", text=str(len(self.models)+1))
 
             if ok and text:
-                print(text)
 
                 model = Model(library_path, name=text)
                 self.models.append(model)
                 self.modelDropDown.addItem('{} - {}'.format(model.name, model.library))
                 self.differenceDropDown.addItem(model.name)
+                self.difference.setEnabled(len(self.models) > 1)
 
                 table_elev = LandVariable(model.hdf, 'ph_depth')
                 table_elev.long_name = 'Water Table Elevation (m)'
@@ -268,19 +273,19 @@ class App(QMainWindow):
                     self.set_variables(self.variableDropDown.currentIndex())
 
     def remove_model(self):
-        print(len(self.models))
         if len(self.models) == 1:
             return
-        print('removing model')
         self.modelDropDown.removeItem(self.models.index(self.model))
         self.differenceDropDown.removeItem(self.models.index(self.model))
         self.modelDropDown.setCurrentIndex(0)
         self.models.remove(self.model)
-        self.set_model(0)
+        self.difference.setEnabled(len(self.models) > 1)
+        self.set_model()
         self.set_variables(self.variableDropDown.currentIndex())
 
     def show_difference_dropdown(self):
         self.differenceDropDown.setEnabled(self.difference.isChecked())
+        self.update_data(self.element)
 
 
     def add_series(self):
@@ -292,7 +297,7 @@ class App(QMainWindow):
             options=QFileDialog.Options())[0]
 
         if os.path.exists(series_path):
-            self.plotCanvas.update_data(self.element, self.variables, series_path)
+            self.update_data(self.element, series_path=series_path)
 
     def set_variables(self, variable_index):
         self.variables = [model.hdf.spatial_variables[variable_index] for model in self.models]
@@ -301,9 +306,13 @@ class App(QMainWindow):
         self.switch_elements()
         self.set_time(self.time)
 
-    def update_data(self, element):
+    def update_data(self, element, series_path=None):
         self.element = element
-        self.plotCanvas.update_data(element, self.variables)
+        if self.differenceDropDown.isEnabled():
+            difference = self.modelDropDown.currentIndex(), self.differenceDropDown.currentIndex()
+        else:
+            difference = None
+        self.plotCanvas.update_data(element, self.variables, difference=difference, series_path=series_path)
 
     def set_hover(self):
         class Thread(QThread):
@@ -330,7 +339,7 @@ class App(QMainWindow):
             self.mapCanvas.show_land()
             self.element = self.mapCanvas.land_elements[0]
 
-        self.plotCanvas.update_data(self.element, self.variables)
+        self.update_data(self.element)
 
     def on_load(self):
         self.progress.hide()
@@ -363,9 +372,11 @@ class App(QMainWindow):
         self.plotCanvas.set_time(self.variable.times[self.time], self.mapCanvas.norm)
         self.legendCanvas.set_time(self.mapCanvas.norm)
 
-    def set_model(self, model_index):
-        self.model = self.models[model_index]
-        self.variable = self.variables[model_index]
+    def set_model(self):
+        self.model = self.models[self.modelDropDown.currentIndex()]
+        self.variable = self.variables[self.modelDropDown.currentIndex()]
+        if self.differenceDropDown.isEnabled():
+            self.update_data(self.element)
         self.set_time(self.time)
 
 
@@ -417,7 +428,7 @@ class PlotCanvas(FigureCanvas):
         self.zoom_level = 0
         self.setAcceptDrops(True)
 
-    def update_data(self, element, variables, series_path=None):
+    def update_data(self, element, variables, series_path=None, difference=None):
 
         for line in self.lines:
             self.axes.lines.remove(line)
@@ -425,19 +436,29 @@ class PlotCanvas(FigureCanvas):
 
         variable_name = variables[0].name
 
-        for i, var in enumerate(variables):
+        if difference is None:
+            for i, var in enumerate(variables):
 
-            s = pd.Series(var.get_element(element.number), index=var.times)
+                s = pd.Series(var.get_element(element.number), index=var.times)
+                if variable_name == 'table_elev':
+                    s = element.elevation - s
+
+                s.plot(color='C{}'.format(i), ax=self.axes, label=var.hdf.model.name)
+
+                self.lines.append(self.axes.lines[-1])
+
             if variable_name == 'table_elev':
-                s = element.elevation - s
+                self.axes.axhline(element.elevation, color='brown')
+                self.lines.append(self.axes.lines[-1])
 
-            s.plot(color='C{}'.format(i), ax=self.axes, label=var.hdf.model.name)
-
+        else:
+            var1 = variables[difference[0]]
+            var2 = variables[difference[1]]
+            difference = pd.Series(var1.get_element(element.number) - var2.get_element(element.number),
+                                   index=var1.times)
+            difference.plot(ax=self.axes, color='C0', label='{} - {}'.format(var1.hdf.model.name, var2.hdf.model.name))
             self.lines.append(self.axes.lines[-1])
 
-        if variable_name == 'table_elev':
-            self.axes.axhline(element.elevation, color='brown')
-            self.lines.append(self.axes.lines[-1])
 
         if variable_name == 'ph_depth' and not self.axes.yaxis_inverted():
             self.axes.invert_yaxis()
@@ -452,9 +473,10 @@ class PlotCanvas(FigureCanvas):
                 start = max(min(variables[0].times), min(series.index))
                 end = min(max(variables[0].times), max(series.index))
                 series = series.sort_index().loc[start:end]
-                series.plot(ax=self.axes,label='Series', color='C{}'.format(len(variables)))
+                series.plot(ax=self.axes, label='Series', color='C{}'.format(len(variables)))
                 self.lines.append(self.axes.lines[-1])
             except:
+                print('could not plot')
                 pass
 
         self.set_backgroud()
@@ -465,7 +487,7 @@ class PlotCanvas(FigureCanvas):
         self.axes.set_title('Element {} - {:.2f} m {}'.format(element.number, element.elevation, element.location))
         self.axes.set_ylabel(variables[0].long_name)
         self.axes.set_xlabel('Time')
-        if len(self.lines) > 1:
+        if len(self.lines) > 1 or difference is not None:
             self.legend = self.axes.legend()
         elif self.legend:
             self.legend.remove()
