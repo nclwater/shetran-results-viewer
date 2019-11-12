@@ -8,7 +8,7 @@ import numpy as np
 import os
 import json
 from PyQt5.QtWidgets import QFrame, QSplitter, QRadioButton, QHBoxLayout, QComboBox, QProgressBar, \
-    QApplication, QMainWindow, QSizePolicy, QPushButton, QFileDialog, QVBoxLayout, QWidget, QSlider
+    QApplication, QMainWindow, QSizePolicy, QPushButton, QFileDialog, QVBoxLayout, QWidget, QSlider, QInputDialog
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QJsonValue, QThread, Qt
 import pandas as pd
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -235,18 +235,24 @@ class App(QMainWindow):
             library_path = self.args.l
             self.args.l = None
         if os.path.exists(library_path):
-            model = Model(library_path)
-            self.models.append(model)
-            self.modelDropDown.addItem('{} - {}'.format(len(self.models), model.library))
 
-            table_elev = LandVariable(model.hdf, 'ph_depth')
-            table_elev.long_name = 'Water Table Elevation (m)'
-            table_elev.name = 'table_elev'
-            model.hdf.variables.append(table_elev)
-            model.hdf.spatial_variables.append(table_elev)
+            text, ok = QInputDialog.getText(self, "Model Name", "Enter a model name", text=str(len(self.models)+1))
 
-            if len(self.models) > 1:
-                self.set_variables(self.variableDropDown.currentIndex())
+            if ok and text:
+                print(text)
+
+                model = Model(library_path, name=text)
+                self.models.append(model)
+                self.modelDropDown.addItem('{} - {}'.format(model.name, model.library))
+
+                table_elev = LandVariable(model.hdf, 'ph_depth')
+                table_elev.long_name = 'Water Table Elevation (m)'
+                table_elev.name = 'table_elev'
+                model.hdf.variables.append(table_elev)
+                model.hdf.spatial_variables.append(table_elev)
+
+                if len(self.models) > 1:
+                    self.set_variables(self.variableDropDown.currentIndex())
 
     def add_series(self):
         series_path = QFileDialog.getOpenFileName(
@@ -396,7 +402,7 @@ class PlotCanvas(FigureCanvas):
             if variable_name == 'table_elev':
                 s = element.elevation - s
 
-            s.plot(color='C{}'.format(i), ax=self.axes, label=i+1)
+            s.plot(color='C{}'.format(i), ax=self.axes, label=var.hdf.model.name)
 
             self.lines.append(self.axes.lines[-1])
 
