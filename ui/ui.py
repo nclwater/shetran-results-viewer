@@ -6,8 +6,8 @@ from pyqtlet import L, MapWidget
 import numpy as np
 import os
 import json
-from PyQt5.QtWidgets import QFrame, QSplitter, QRadioButton, QHBoxLayout, QLabel, QComboBox, QProgressBar, \
-    QApplication, QMainWindow, QSizePolicy, QPushButton, QFileDialog, QVBoxLayout, QWidget, QSlider, QScrollArea
+from PyQt5.QtWidgets import QFrame, QSplitter, QRadioButton, QHBoxLayout, QComboBox, QProgressBar, \
+    QApplication, QMainWindow, QSizePolicy, QPushButton, QFileDialog, QVBoxLayout, QWidget, QSlider
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QJsonValue, QThread, Qt
 import pandas as pd
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -454,6 +454,7 @@ class PlotCanvas(FigureCanvas):
 
         self.axes.set_xlim(xmin, xmax)
         self.draw()
+
 
 class MapCanvas(QFrame):
     clickedElement = pyqtSignal(object)
