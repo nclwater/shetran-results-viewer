@@ -192,7 +192,6 @@ class App(QMainWindow):
         rows.addWidget(row4)
         self.setAcceptDrops(True)
 
-
         self.model.hdf.get_elevations()
 
         self.mainWidget.setLayout(rows)
@@ -240,6 +239,8 @@ class App(QMainWindow):
             if len(self.models) > 1:
                 self.set_variables(self.variableDropDown.currentIndex())
 
+            self.models[-1].hdf.ph_depth.long_name = 'Water Table Elevation (m)'
+
     def add_series(self):
         series_path = QFileDialog.getOpenFileName(
             self,
@@ -250,7 +251,6 @@ class App(QMainWindow):
 
         if os.path.exists(series_path):
             self.plotCanvas.update_data(self.element, self.variables, series_path)
-
 
     def set_variables(self, variable_index):
         self.variables = [model.hdf.spatial_variables[variable_index] for model in self.models]
@@ -380,11 +380,20 @@ class PlotCanvas(FigureCanvas):
             self.axes.lines.remove(line)
         self.lines = []
 
+        variable_name = variables[0].name
+
         for i, var in enumerate(variables):
 
-            pd.Series(var.get_element(element.number),
-                      index=var.times).plot(color='C{}'.format(i), ax=self.axes, label=i+1)
+            s = pd.Series(var.get_element(element.number), index=var.times)
+            if variable_name == 'ph_depth':
+                s = element.elevation - s
 
+            s.plot(color='C{}'.format(i), ax=self.axes, label=i+1)
+
+            self.lines.append(self.axes.lines[-1])
+
+        if variable_name == 'ph_depth':
+            self.axes.axhline(element.elevation, color='brown')
             self.lines.append(self.axes.lines[-1])
 
         if series_path is not None:
