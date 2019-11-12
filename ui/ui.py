@@ -81,7 +81,7 @@ class App(QMainWindow):
 
         self.droppedPath = None
 
-        self.difference = QCheckBox("")
+        self.difference = QCheckBox("Difference:")
 
         self.difference.clicked.connect(self.show_difference_dropdown)
 
@@ -368,7 +368,11 @@ class App(QMainWindow):
 
     def set_time(self, time):
         self.time = time
-        self.mapCanvas.set_time(self.time, self.variable)
+        if self.differenceDropDown.isEnabled():
+            difference = self.variables[self.differenceDropDown.currentIndex()]
+        else:
+            difference = None
+        self.mapCanvas.set_time(self.time, self.variable, difference=difference)
         self.plotCanvas.set_time(self.variable.times[self.time], self.mapCanvas.norm)
         self.legendCanvas.set_time(self.mapCanvas.norm)
 
@@ -630,8 +634,10 @@ class MapCanvas(QFrame):
         self.visible_elements = self.river_elements
         self.select_element(self.river_elements[0])
 
-    def set_time(self, time, variable):
+    def set_time(self, time, variable, difference=None):
         values = variable.get_time(time)
+        if difference is not None:
+            values -= difference.get_time(time)
         if variable.name == 'table_elev':
             values -= variable.hdf.elevations[:len(variable.hdf.land_elements)]
 
