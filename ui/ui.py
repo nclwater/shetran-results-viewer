@@ -403,6 +403,11 @@ class PlotCanvas(FigureCanvas):
             self.axes.axhline(element.elevation, color='brown')
             self.lines.append(self.axes.lines[-1])
 
+        if variable_name == 'ph_depth' and not self.axes.yaxis_inverted():
+            self.axes.invert_yaxis()
+        elif variable_name != 'ph_depth' and self.axes.yaxis_inverted():
+            self.axes.invert_yaxis()
+
         if series_path is not None:
             try:
                 series = pd.read_csv(series_path, usecols=[0, 1], index_col=0, squeeze=True)
