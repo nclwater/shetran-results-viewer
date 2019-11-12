@@ -1,6 +1,7 @@
 import sys
 from shetranio.hdf import Geometries
 from shetranio.model import Model
+from shetranio.hdf import LandVariable
 import argparse
 from pyqtlet import L, MapWidget
 import numpy as np
@@ -16,6 +17,7 @@ from matplotlib.colors import Normalize, to_hex
 from matplotlib.cm import get_cmap
 from matplotlib.pyplot import colorbar
 from matplotlib.cm import ScalarMappable
+from copy import deepcopy
 
 
 parser = argparse.ArgumentParser()
@@ -236,10 +238,15 @@ class App(QMainWindow):
             model = Model(library_path)
             self.models.append(model)
             self.modelDropDown.addItem('{} - {}'.format(len(self.models), model.library))
+
+            table_elev = LandVariable(model.hdf, 'ph_depth')
+            table_elev.long_name = 'Water Table Elevation (m)'
+            table_elev.name = 'table_elev'
+            model.hdf.variables.append(table_elev)
+            model.hdf.spatial_variables.append(table_elev)
+
             if len(self.models) > 1:
                 self.set_variables(self.variableDropDown.currentIndex())
-
-            self.models[-1].hdf.ph_depth.long_name = 'Water Table Elevation (m)'
 
     def add_series(self):
         series_path = QFileDialog.getOpenFileName(
@@ -385,14 +392,14 @@ class PlotCanvas(FigureCanvas):
         for i, var in enumerate(variables):
 
             s = pd.Series(var.get_element(element.number), index=var.times)
-            if variable_name == 'ph_depth':
+            if variable_name == 'table_elev':
                 s = element.elevation - s
 
             s.plot(color='C{}'.format(i), ax=self.axes, label=i+1)
 
             self.lines.append(self.axes.lines[-1])
 
-        if variable_name == 'ph_depth':
+        if variable_name == 'table_elev':
             self.axes.axhline(element.elevation, color='brown')
             self.lines.append(self.axes.lines[-1])
 
@@ -560,6 +567,9 @@ class MapCanvas(QFrame):
 
     def set_time(self, time, variable):
         values = variable.get_time(time)
+        if variable.name == 'table_elev':
+            values -= variable.hdf.elevations[:len(variable.hdf.land_elements)]
+
         cm = get_cmap(colormap)
         if np.all(values == 0):
             self.norm = Normalize(vmin=0, vmax=1)
