@@ -7,7 +7,7 @@ from pyqtlet import L, MapWidget
 import numpy as np
 import os
 import json
-from PyQt5.QtWidgets import QFrame, QSplitter, QRadioButton, QHBoxLayout, QComboBox, QProgressBar, \
+from PyQt5.QtWidgets import QFrame, QSplitter, QRadioButton, QHBoxLayout, QComboBox, QProgressBar, QCheckBox, \
     QApplication, QMainWindow, QSizePolicy, QPushButton, QFileDialog, QVBoxLayout, QWidget, QSlider, QInputDialog
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QJsonValue, QThread, Qt
 import pandas as pd
@@ -81,6 +81,12 @@ class App(QMainWindow):
 
         self.droppedPath = None
 
+        self.difference = QCheckBox("")
+
+        self.difference.clicked.connect(self.show_difference_dropdown)
+
+        self.differenceDropDown = QComboBox()
+
         self.add_model()
         self.model = self.models[0]
 
@@ -125,6 +131,8 @@ class App(QMainWindow):
         self.add_series_button.clicked.connect(self.add_series)
 
         row2.addWidget(self.variableDropDown)
+        row2.addWidget(self.difference)
+        row2.addWidget(self.differenceDropDown)
         row2.addWidget(self.add_model_button)
         row2.addWidget(self.remove_model_button)
         row2.addWidget(self.add_series_button)
@@ -248,6 +256,7 @@ class App(QMainWindow):
                 model = Model(library_path, name=text)
                 self.models.append(model)
                 self.modelDropDown.addItem('{} - {}'.format(model.name, model.library))
+                self.differenceDropDown.addItem(model.name)
 
                 table_elev = LandVariable(model.hdf, 'ph_depth')
                 table_elev.long_name = 'Water Table Elevation (m)'
@@ -264,10 +273,14 @@ class App(QMainWindow):
             return
         print('removing model')
         self.modelDropDown.removeItem(self.models.index(self.model))
+        self.differenceDropDown.removeItem(self.models.index(self.model))
         self.modelDropDown.setCurrentIndex(0)
         self.models.remove(self.model)
         self.set_model(0)
         self.set_variables(self.variableDropDown.currentIndex())
+
+    def show_difference_dropdown(self):
+        self.differenceDropDown.setEnabled(self.difference.isChecked())
 
 
     def add_series(self):
