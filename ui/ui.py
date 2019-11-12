@@ -118,11 +118,15 @@ class App(QMainWindow):
         self.add_model_button = QPushButton(text='Add Model')
         self.add_model_button.clicked.connect(self.add_model)
 
+        self.remove_model_button = QPushButton(text='Remove Model')
+        self.remove_model_button.clicked.connect(self.remove_model)
+
         self.add_series_button = QPushButton(text='Add Series')
         self.add_series_button.clicked.connect(self.add_series)
 
         row2.addWidget(self.variableDropDown)
         row2.addWidget(self.add_model_button)
+        row2.addWidget(self.remove_model_button)
         row2.addWidget(self.add_series_button)
         row2.addWidget(self.download_button)
         row2.addWidget(self.plot_on_click)
@@ -254,6 +258,18 @@ class App(QMainWindow):
                 if len(self.models) > 1:
                     self.set_variables(self.variableDropDown.currentIndex())
 
+    def remove_model(self):
+        print(len(self.models))
+        if len(self.models) == 1:
+            return
+        print('removing model')
+        self.modelDropDown.removeItem(self.models.index(self.model))
+        self.modelDropDown.setCurrentIndex(0)
+        self.models.remove(self.model)
+        self.set_model(0)
+        self.set_variables(self.variableDropDown.currentIndex())
+
+
     def add_series(self):
         series_path = QFileDialog.getOpenFileName(
             self,
@@ -315,8 +331,8 @@ class App(QMainWindow):
         if not self.element:
             return
         array = pd.DataFrame({'time': self.variables[0].times[:],
-                              **{'model_{}'.format(i+1): var.get_element(self.element.number).round(3) for i, var in
-                                 enumerate(self.variables)}})
+                              **{'{}'.format(var.hdf.model.name): var.get_element(self.element.number).round(3)
+                                 for var in self.variables}})
 
         directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), '{} at {}.csv'.format(
             self.variables[0].long_name, self.element.number).replace('/', ' per '))
