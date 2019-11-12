@@ -195,6 +195,10 @@ class App(QMainWindow):
 
         self.mapCanvas.add_data(self.model)
 
+        self.rename = QPushButton(parent=self, text='Rename Model')
+        row1.addWidget(self.rename)
+        self.rename.clicked.connect(self.rename_model)
+
         self.pan = QPushButton(parent=self, text='Reset View')
         row1.addWidget(self.pan)
         self.pan.clicked.connect(self.mapCanvas.pan_to)
@@ -271,6 +275,17 @@ class App(QMainWindow):
 
                 if len(self.models) > 1:
                     self.set_variables(self.variableDropDown.currentIndex())
+
+    def rename_model(self):
+        text, ok = QInputDialog.getText(self, "Model Name", "Enter a model name", text=self.model.name)
+
+        if ok and text:
+            self.model.name = text
+            idx = self.modelDropDown.currentIndex()
+            self.modelDropDown.setItemText(idx, '{} - {}'.format(self.model.name, self.model.library))
+            self.differenceDropDown.setItemText(idx, self.model.name)
+            self.update_data(self.element)
+
 
     def remove_model(self):
         if len(self.models) == 1:
