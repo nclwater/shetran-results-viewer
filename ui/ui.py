@@ -654,7 +654,7 @@ class MapCanvas(QFrame):
         if difference is not None:
             values -= difference.get_time(time)
         if variable.name == 'table_elev':
-            values = variable.hdf.elevations[:len(variable.hdf.land_elements)] - values
+            values = variable.hdf.elevations[variable.hdf.land_elements-1] - values
 
         cm = get_cmap(colormap)
         if np.all(values == 0):
