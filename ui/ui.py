@@ -7,7 +7,7 @@ from pyqtlet import L, MapWidget
 import numpy as np
 import os
 import json
-from PyQt5.QtWidgets import QFrame, QSplitter, QRadioButton, QHBoxLayout, QComboBox, QProgressBar, QCheckBox, \
+from PyQt5.QtWidgets import QFrame, QSplitter, QRadioButton, QHBoxLayout, QComboBox, QProgressBar, QCheckBox, QMessageBox, \
     QApplication, QMainWindow, QSizePolicy, QPushButton, QFileDialog, QVBoxLayout, QWidget, QSlider, QInputDialog
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QJsonValue, QThread, Qt
 import pandas as pd
@@ -261,20 +261,30 @@ class App(QMainWindow):
 
             if ok and text:
 
-                model = Model(library_path, name=text)
-                self.models.append(model)
-                self.modelDropDown.addItem('{} - {}'.format(model.name, model.library))
-                self.differenceDropDown.addItem(model.name)
-                self.difference.setEnabled(len(self.models) > 1)
+                try:
 
-                table_elev = LandVariable(model.hdf, 'ph_depth')
-                table_elev.long_name = 'Water Table Elevation (m)'
-                table_elev.name = 'table_elev'
-                model.hdf.variables.append(table_elev)
-                model.hdf.spatial_variables.append(table_elev)
+                    model = Model(library_path, name=text)
+                    self.models.append(model)
+                    self.modelDropDown.addItem('{} - {}'.format(model.name, model.library))
+                    self.differenceDropDown.addItem(model.name)
+                    self.difference.setEnabled(len(self.models) > 1)
 
-                if len(self.models) > 1:
-                    self.set_variables(self.variableDropDown.currentIndex())
+                    table_elev = LandVariable(model.hdf, 'ph_depth')
+                    table_elev.long_name = 'Water Table Elevation (m)'
+                    table_elev.name = 'table_elev'
+                    model.hdf.variables.append(table_elev)
+                    model.hdf.spatial_variables.append(table_elev)
+
+                    if len(self.models) > 1:
+                        self.set_variables(self.variableDropDown.currentIndex())
+
+                except:
+                    import traceback
+                    msg = QMessageBox()
+                    msg.setText(traceback.format_exc())
+                    msg.exec_()
+                    self.add_model()
+
 
     def rename_model(self):
         text, ok = QInputDialog.getText(self, "Model Name", "Enter a model name", text=self.model.name)
