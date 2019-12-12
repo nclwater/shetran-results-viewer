@@ -16,6 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-l')
 args = parser.parse_args()
 
+
 class App(QMainWindow):
 
     def __init__(self):
@@ -125,8 +126,8 @@ class App(QMainWindow):
 
         map_and_legend_layout = QVBoxLayout()
 
-        self.mapCanvas = MapCanvas()
-        self.legendCanvas = LegendCanvas()
+        self.mapCanvas = MapCanvas(self)
+        self.legendCanvas = LegendCanvas(self)
         map_and_legend_layout.addWidget(self.mapCanvas)
         map_and_legend_layout.addWidget(self.legendCanvas)
 

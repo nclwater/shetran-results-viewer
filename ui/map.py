@@ -11,6 +11,7 @@ from pyqtlet import L
 import json
 from PyQt5.QtCore import pyqtSlot, QJsonValue
 
+
 class Group(L.featureGroup):
     def __init__(self):
         super().__init__()
@@ -18,15 +19,18 @@ class Group(L.featureGroup):
     def update_style(self, style):
         self.runJavaScript("{}.setStyle({})".format(self.jsName, json.dumps(style)))
 
+
 class MapCanvas(QFrame):
     clickedElement = pyqtSignal(object)
     loaded = pyqtSignal()
     progress = pyqtSignal(float)
 
-    def __init__(self, parent=None):
+    def __init__(self, app):
+
+        self.app = app
         self.mapWidget = MapWidget()
         QWidget.__init__(self, self.mapWidget)
-        self.setParent(parent)
+        self.setParent(app)
 
         self.layout = QVBoxLayout(self)
         self.layout.addWidget(self.mapWidget)

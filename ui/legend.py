@@ -8,7 +8,9 @@ from settings import colormap
 
 
 class LegendCanvas(FigureCanvas):
-    def __init__(self):
+    def __init__(self, app):
+
+        self.app = app
 
         self.fig = Figure(figsize=(7, 1))
         self.fig.subplots_adjust(bottom=0.5)

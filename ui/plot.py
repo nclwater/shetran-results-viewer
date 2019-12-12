@@ -10,8 +10,9 @@ from settings import colormap
 
 class PlotCanvas(FigureCanvas):
 
-    def __init__(self, parent=None):
+    def __init__(self, app):
 
+        self.app = app
         self.fig = Figure()
         self.axes = self.fig.add_subplot(111)
         self.fig.subplots_adjust(bottom=0.2, top=0.9)
@@ -22,7 +23,7 @@ class PlotCanvas(FigureCanvas):
 
         FigureCanvas.__init__(self, self.fig)
         self.setStyleSheet("background-color:transparent;")
-        self.setParent(parent)
+        self.setParent(app)
 
         FigureCanvas.setSizePolicy(self,
                                    QSizePolicy.Expanding,
