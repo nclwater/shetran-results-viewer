@@ -150,7 +150,11 @@ class App(QMainWindow):
 
         self.progress = QProgressBar(self)
 
+        self.resampleCheckBox = QCheckBox('Plot Monthly Means')
+        self.resampleCheckBox.stateChanged.connect(self.update_resample)
+
         row2.addWidget(self.progress)
+        row3.addWidget(self.resampleCheckBox)
         row3.addWidget(self.slider)
 
         self.setWindowTitle(self.title)
@@ -331,13 +335,18 @@ class App(QMainWindow):
         self.switch_elements()
         self.set_time(self.time)
 
+    def update_resample(self):
+        self.update_data(self.element)
+
     def update_data(self, element, series_path=None):
         self.element = element
         if self.differenceDropDown.isEnabled():
             difference = self.modelDropDown.currentIndex(), self.differenceDropDown.currentIndex()
         else:
             difference = None
-        self.plotCanvas.update_data(element, self.variables, difference=difference, series_path=series_path)
+
+        self.plotCanvas.update_data(self.element, self.variables, difference=difference, series_path=series_path,
+                                    resample=self.resampleCheckBox.isChecked())
 
     def set_hover(self):
         class Thread(QThread):
@@ -457,7 +466,7 @@ class PlotCanvas(FigureCanvas):
         self.zoom_level = 0
         self.setAcceptDrops(True)
 
-    def update_data(self, element, variables, series_path=None, difference=None):
+    def update_data(self, element, variables, series_path=None, difference=None, resample=False):
 
         for line in self.lines:
             self.axes.lines.remove(line)
@@ -472,6 +481,9 @@ class PlotCanvas(FigureCanvas):
                 if variable_name == 'table_elev':
                     s = element.elevation - s
 
+                if resample and (s.index[1] - s.index[0]) < pd.Timedelta(days=28):
+                    s = s.resample('1M').mean()
+
                 s.plot(color='C{}'.format(i), ax=self.axes, label=var.hdf.model.name)
 
                 self.lines.append(self.axes.lines[-1])
@@ -485,9 +497,10 @@ class PlotCanvas(FigureCanvas):
             var2 = variables[difference[1]]
             difference = pd.Series(var1.get_element(element.number) - var2.get_element(element.number),
                                    index=var1.times)
+            if resample and (difference.index[1] - difference.index[0]) < pd.Timedelta(days=28):
+                difference = difference.resample('1M')
             difference.plot(ax=self.axes, color='C0', label='{} - {}'.format(var1.hdf.model.name, var2.hdf.model.name))
             self.lines.append(self.axes.lines[-1])
-
 
         if variable_name == 'ph_depth' and not self.axes.yaxis_inverted():
             self.axes.invert_yaxis()
@@ -502,6 +515,8 @@ class PlotCanvas(FigureCanvas):
                 start = max(min(variables[0].times), min(series.index))
                 end = min(max(variables[0].times), max(series.index))
                 series = series.sort_index().loc[start:end]
+                if resample and (series.index[1] - series.index[0]) < pd.Timedelta(days=28):
+                    series = series.resample('1M')
                 series.plot(ax=self.axes, label='Series', color='C{}'.format(len(variables)))
                 self.lines.append(self.axes.lines[-1])
             except:
