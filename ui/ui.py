@@ -474,17 +474,42 @@ class PlotCanvas(FigureCanvas):
 
         variable_name = variables[0].name
 
+        if series_path is not None:
+            try:
+                series = pd.read_csv(series_path, usecols=[0, 1], index_col=0, squeeze=True)
+                series.index = pd.DatetimeIndex(pd.to_datetime(series.index))
+
+                start = max(min(variables[0].times), min(series.index))
+                end = min(max(variables[0].times), max(series.index))
+                series = series.sort_index().loc[start:end].rename('observed')
+                if resample and (series.index[1] - series.index[0]) < pd.Timedelta(days=28):
+                    series = series.resample('1M')
+                series.plot(ax=self.axes, label='Observed', color='C{}'.format(len(variables)))
+                self.lines.append(self.axes.lines[-1])
+            except:
+                print('could not plot')
+                pass
+
         if difference is None:
             for i, var in enumerate(variables):
 
-                s = pd.Series(var.get_element(element.number), index=var.times)
+                s = pd.Series(var.get_element(element.number), index=var.times, name='modelled')
                 if variable_name == 'table_elev':
                     s = element.elevation - s
+
+                if series_path is not None:
+                    join = pd.merge(s, series, how='left', left_index=True, right_index=True)
+                    ns = 1 - (((join.modelled-join.observed)**2).sum()/((join.observed-join.observed.mean())**2).sum())
+                    self.axes.set_title('NS={:.2f}'.format(ns))
 
                 if resample and (s.index[1] - s.index[0]) < pd.Timedelta(days=28):
                     s = s.resample('1M').mean()
 
-                s.plot(color='C{}'.format(i), ax=self.axes, label=var.hdf.model.name)
+                s.plot(color='C{}'.format(i), ax=self.axes,
+                       label='{} ({:.2f})'.format(var.hdf.model.name, ns)
+                       if series_path is not None else var.hdf.model.name)
+
+
 
                 self.lines.append(self.axes.lines[-1])
 
@@ -506,22 +531,6 @@ class PlotCanvas(FigureCanvas):
             self.axes.invert_yaxis()
         elif variable_name != 'ph_depth' and self.axes.yaxis_inverted():
             self.axes.invert_yaxis()
-
-        if series_path is not None:
-            try:
-                series = pd.read_csv(series_path, usecols=[0, 1], index_col=0, squeeze=True)
-                series.index = pd.DatetimeIndex(pd.to_datetime(series.index))
-
-                start = max(min(variables[0].times), min(series.index))
-                end = min(max(variables[0].times), max(series.index))
-                series = series.sort_index().loc[start:end]
-                if resample and (series.index[1] - series.index[0]) < pd.Timedelta(days=28):
-                    series = series.resample('1M')
-                series.plot(ax=self.axes, label='Series', color='C{}'.format(len(variables)))
-                self.lines.append(self.axes.lines[-1])
-            except:
-                print('could not plot')
-                pass
 
         self.set_backgroud()
 
