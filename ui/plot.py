@@ -20,6 +20,8 @@ class PlotCanvas(FigureCanvas):
         self.sm.set_array(np.array([]))
         self.fig.patch.set_visible(False)
         self.legend = None
+        self.series_path = None
+        self.difference = None
 
         FigureCanvas.__init__(self, self.fig)
         self.setStyleSheet("background-color:transparent;")
@@ -34,13 +36,18 @@ class PlotCanvas(FigureCanvas):
         self.zoom_level = 0
         self.setAcceptDrops(True)
 
-    def update_data(self, element, variables, series_path=None, difference=None, resample=False):
+    def update_data(self, series_path=None, difference=None, resample=False):
+
+        self.series_path = series_path
+        self.difference = difference
 
         for line in self.lines:
             self.axes.lines.remove(line)
         self.lines = []
 
+        variables = self.app.variables
         variable_name = variables[0].name
+        element = self.app.element
 
         if series_path is not None:
             try:
@@ -66,9 +73,9 @@ class PlotCanvas(FigureCanvas):
                     s = element.elevation - s
 
                 if series_path is not None:
-                    join = pd.merge(s, series, how='left', left_index=True, right_index=True)
+                    xmin, xmax = self.set_x_limits()
+                    join = pd.merge(s[xmin:xmax], series, how='left', left_index=True, right_index=True)
                     ns = 1 - (((join.modelled-join.observed)**2).sum()/((join.observed-join.observed.mean())**2).sum())
-                    self.axes.set_title('NS={:.2f}'.format(ns))
 
                 if resample and (s.index[1] - s.index[0]) < pd.Timedelta(days=28):
                     s = s.resample('1M').mean()
@@ -124,10 +131,15 @@ class PlotCanvas(FigureCanvas):
         self.set_backgroud()
         self.sm.set_norm(norm)
         self.set_x_limits()
+        if self.series_path:
+            self.update_data(series_path=self.series_path)
 
     def set_zoom(self, value):
         self.zoom_level = value
         self.set_x_limits()
+
+        if self.series_path:
+            self.update_data(series_path=self.series_path)
 
     def set_x_limits(self):
         if not self.time:
@@ -154,3 +166,5 @@ class PlotCanvas(FigureCanvas):
 
         self.axes.set_xlim(xmin, xmax)
         self.draw()
+
+        return xmin, xmax

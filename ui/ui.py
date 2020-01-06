@@ -193,7 +193,7 @@ class App(QMainWindow):
             break
 
         if self.droppedPath.endswith('.csv'):
-            self.plotCanvas.update_data(self.element, variables=self.variables, series_path=self.droppedPath)
+            self.plotCanvas.update_data(series_path=self.droppedPath)
             self.difference.setChecked(False)
             self.differenceDropDown.setEnabled(False)
         elif self.droppedPath.endswith('.xml'):
@@ -299,7 +299,7 @@ class App(QMainWindow):
         else:
             difference = None
 
-        self.plotCanvas.update_data(self.element, self.variables, difference=difference, series_path=series_path,
+        self.plotCanvas.update_data(difference=difference, series_path=series_path,
                                     resample=self.resampleCheckBox.isChecked())
 
     def set_hover(self):
