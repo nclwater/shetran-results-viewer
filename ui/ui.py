@@ -35,14 +35,16 @@ class App(QMainWindow):
 
         self.droppedPath = None
 
-        self.difference = QCheckBox("Difference:")
+        self.differenceCheckBox = QCheckBox("Difference:")
 
-        self.difference.clicked.connect(self.show_difference_dropdown)
+        self.differenceCheckBox.clicked.connect(self.show_or_hide_difference_dropdown)
 
         self.differenceDropDown = QComboBox()
         self.differenceDropDown.setEnabled(False)
 
         self.differenceDropDown.activated.connect(self.set_model)
+
+        self.series = None
 
         self.add_model()
         self.model = self.models[0]
@@ -85,14 +87,18 @@ class App(QMainWindow):
         self.remove_model_button.clicked.connect(self.remove_model)
 
         self.add_series_button = QPushButton(text='Add Series')
-        self.add_series_button.clicked.connect(self.add_series)
+        self.add_series_button.clicked.connect(lambda: self.add_series())
+
+        self.clear_series_button = QPushButton(text='Clear Series')
+        self.clear_series_button.clicked.connect(self.clear_series)
 
         row2.addWidget(self.variableDropDown)
-        row2.addWidget(self.difference)
+        row2.addWidget(self.differenceCheckBox)
         row2.addWidget(self.differenceDropDown)
         row2.addWidget(self.add_model_button)
         row2.addWidget(self.remove_model_button)
         row2.addWidget(self.add_series_button)
+        row2.addWidget(self.clear_series_button)
         row2.addWidget(self.download_button)
         row2.addWidget(self.plot_on_click)
         row2.addWidget(self.plot_on_hover)
@@ -193,9 +199,8 @@ class App(QMainWindow):
             break
 
         if self.droppedPath.endswith('.csv'):
-            self.update_data(element=self.element, series_path=self.droppedPath)
-            self.difference.setChecked(False)
-            self.differenceDropDown.setEnabled(False)
+            self.add_series(self.droppedPath)
+
         elif self.droppedPath.endswith('.xml'):
             self.add_model()
 
@@ -225,7 +230,7 @@ class App(QMainWindow):
                     self.models.append(model)
                     self.modelDropDown.addItem('{} - {}'.format(model.name, model.library))
                     self.differenceDropDown.addItem(model.name)
-                    self.difference.setEnabled(len(self.models) > 1)
+                    self.differenceCheckBox.setEnabled(len(self.models) > 1)
 
                     table_elev = LandVariable(model.hdf, 'ph_depth')
                     table_elev.long_name = 'Water Table Elevation (m)'
@@ -262,25 +267,48 @@ class App(QMainWindow):
         self.differenceDropDown.removeItem(self.models.index(self.model))
         self.modelDropDown.setCurrentIndex(0)
         self.models.remove(self.model)
-        self.difference.setEnabled(len(self.models) > 1)
+        self.differenceCheckBox.setEnabled(len(self.models) > 1)
         self.set_model()
         self.set_variables(self.variableDropDown.currentIndex())
 
-    def show_difference_dropdown(self):
-        self.differenceDropDown.setEnabled(self.difference.isChecked())
+    def show_or_hide_difference_dropdown(self):
+        self.differenceDropDown.setEnabled(self.differenceCheckBox.isChecked())
+        self.mapCanvas.set_time(self.time, self.variable,
+                                self.variables[self.differenceDropDown.currentIndex()]
+                                if self.differenceCheckBox.isChecked() else None)
+        self.series = None
         self.update_data(self.element)
 
-
-    def add_series(self):
-        series_path = QFileDialog.getOpenFileName(
-            self,
-            'Choose a CSV file',
-            "",
-            "CSV files (*.csv);;All Files (*)",
-            options=QFileDialog.Options())[0]
+    def add_series(self, series_path=None):
+        if series_path is None:
+            series_path = QFileDialog.getOpenFileName(
+                self,
+                'Choose a CSV file',
+                "",
+                "CSV files (*.csv);;All Files (*)",
+                options=QFileDialog.Options())[0]
 
         if os.path.exists(series_path):
-            self.update_data(self.element, series_path=series_path)
+
+            try:
+                self.series = pd.read_csv(series_path, usecols=[0, 1], index_col=0, squeeze=True)
+                self.series.index = pd.DatetimeIndex(pd.to_datetime(self.series.index))
+
+                start = max(min(self.variables[0].times), min(self.series.index))
+                end = min(max(self.variables[0].times), max(self.series.index))
+                self.series = self.series.sort_index().loc[start:end].rename('observed')
+                self.differenceCheckBox.setChecked(False)
+                self.differenceDropDown.setEnabled(False)
+                self.update_data(self.element)
+            except:
+                self.series = None
+                print('Could not read series')
+
+
+
+    def clear_series(self):
+        self.series = None
+        self.update_data(self.element)
 
     def set_variables(self, variable_index):
         self.variables = [model.hdf.spatial_variables[variable_index] for model in self.models]
@@ -290,17 +318,11 @@ class App(QMainWindow):
         self.set_time(self.time)
 
     def update_resample(self):
-        self.update_data(self.element, self.plotCanvas.series_path)
+        self.update_data(self.element)
 
-    def update_data(self, element, series_path=None):
+    def update_data(self, element):
         self.element = element
-        if self.differenceDropDown.isEnabled():
-            difference = self.modelDropDown.currentIndex(), self.differenceDropDown.currentIndex()
-        else:
-            difference = None
-
-        self.plotCanvas.update_data(difference=difference, series_path=series_path,
-                                    resample=self.resampleCheckBox.isChecked())
+        self.plotCanvas.update_data()
 
     def set_hover(self):
         class Thread(QThread):
@@ -327,7 +349,7 @@ class App(QMainWindow):
             self.mapCanvas.show_land()
             self.element = self.mapCanvas.land_elements[0]
 
-        self.update_data(self.element, series_path=None)
+        self.update_data(self.element)
 
     def on_load(self):
         self.progress.hide()

@@ -20,9 +20,6 @@ class PlotCanvas(FigureCanvas):
         self.sm.set_array(np.array([]))
         self.fig.patch.set_visible(False)
         self.legend = None
-        self.series_path = None
-        self.difference = None
-        self.resample = None
 
         FigureCanvas.__init__(self, self.fig)
         self.setStyleSheet("background-color:transparent;")
@@ -33,80 +30,101 @@ class PlotCanvas(FigureCanvas):
                                    QSizePolicy.Expanding)
 
         self.lines = []
+        self.model_values = []
+        self.observed = None
         self.time = None
         self.zoom_level = 0
         self.setAcceptDrops(True)
 
-    def update_data(self, series_path=None, difference=None, resample=False):
-
-        self.series_path = series_path
-        self.difference = difference
-        self.resample = resample
-
+    def clear_plot(self):
         for line in self.lines:
             self.axes.lines.remove(line)
         self.lines = []
+        if self.observed is not None:
+            self.axes.lines.remove(self.observed)
 
-        variables = self.app.variables
-        variable_name = variables[0].name
-        element = self.app.element
+    def plot_observed(self):
 
-        if series_path is not None:
-            try:
-                series = pd.read_csv(series_path, usecols=[0, 1], index_col=0, squeeze=True)
-                series.index = pd.DatetimeIndex(pd.to_datetime(series.index))
+        self.observed = None
 
-                start = max(min(variables[0].times), min(series.index))
-                end = min(max(variables[0].times), max(series.index))
-                series = series.sort_index().loc[start:end].rename('observed')
-                if resample and (series.index[1] - series.index[0]) < pd.Timedelta(days=28):
-                    series = series.resample('1M').mean()
-                series.plot(ax=self.axes, label='Observed', color='C{}'.format(len(variables)))
-                self.lines.append(self.axes.lines[-1])
-            except:
-                print('could not plot')
-                pass
+        if self.app.series is None:
+            return
 
-        if difference is None:
-            for i, var in enumerate(variables):
-
-                s = pd.Series(var.get_element(element.number), index=var.times, name='modelled')
-                if variable_name == 'table_elev':
-                    s = element.elevation - s
-
-                if series_path is not None:
-                    xmin, xmax = self.set_x_limits()
-                    join = pd.merge(s[xmin:xmax], series, how='left', left_index=True, right_index=True)
-                    ns = 1 - (((join.modelled-join.observed)**2).sum()/((join.observed-join.observed.mean())**2).sum())
-
-                if resample and (s.index[1] - s.index[0]) < pd.Timedelta(days=28):
-                    s = s.resample('1M').mean()
-
-                s.plot(color='C{}'.format(i), ax=self.axes,
-                       label='{} ({:.2f})'.format(var.hdf.model.name, ns)
-                       if series_path is not None else var.hdf.model.name)
-
-
-
-                self.lines.append(self.axes.lines[-1])
-
-            if variable_name == 'table_elev':
-                self.axes.axhline(element.elevation, color='brown')
-                self.lines.append(self.axes.lines[-1])
-
+        if self.app.resampleCheckBox.isChecked() and (self.app.series.index[1] -
+                                                      self.app.series.index[0]) < pd.Timedelta(days=28):
+            series = self.app.series.resample('1M').mean()
         else:
-            var1 = variables[difference[0]]
-            var2 = variables[difference[1]]
-            difference = pd.Series(var1.get_element(element.number) - var2.get_element(element.number),
-                                   index=var1.times)
-            if resample and (difference.index[1] - difference.index[0]) < pd.Timedelta(days=28):
-                difference = difference.resample('1M')
-            difference.plot(ax=self.axes, color='C0', label='{} - {}'.format(var1.hdf.model.name, var2.hdf.model.name))
+            series = self.app.series
+
+        series.plot(ax=self.axes, label='Series', color='C{}'.format(len(self.app.variables)))
+        self.observed = self.axes.lines[-1]
+
+    def plot_difference(self):
+        var1 = self.app.variables[self.app.modelDropDown.currentIndex()]
+        var2 = self.app.variables[self.app.differenceDropDown.currentIndex()]
+
+        difference = pd.Series(var1.get_element(self.app.element.number) - var2.get_element(self.app.element.number),
+                               index=var1.times)
+        if self.app.resampleCheckBox.isChecked() and (difference.index[1] - difference.index[0]) < pd.Timedelta(days=28):
+            difference = difference.resample('1M')
+        difference.plot(ax=self.axes, color='C0', label='{} - {}'.format(var1.hdf.model.name, var2.hdf.model.name))
+        self.lines.append(self.axes.lines[-1])
+
+    def plot_models(self):
+        self.model_values = []
+        for i, var in enumerate(self.app.variables):
+
+            s = pd.Series(var.get_element(self.app.element.number), index=var.times, name='modelled')
+            if self.app.variable.name == 'table_elev':
+                s = self.app.element.elevation - s
+
+            if self.app.resampleCheckBox.isChecked() and (s.index[1] - s.index[0]) < pd.Timedelta(days=28):
+                s = s.resample('1M').mean()
+
+            s.plot(color='C{}'.format(i), ax=self.axes,
+                   label=var.hdf.model.name)
+
+            self.lines.append(self.axes.lines[-1])
+            self.model_values.append(s)
+
+        if self.app.variable.name == 'table_elev':
+            self.axes.axhline(self.app.element.elevation, color='brown')
+
             self.lines.append(self.axes.lines[-1])
 
-        if variable_name == 'ph_depth' and not self.axes.yaxis_inverted():
+    def calculate_nse(self):
+        if self.observed is None:
+            return
+
+        for model_values, line in zip(self.model_values, self.lines):
+
+            join = pd.merge_asof(model_values, self.app.series, left_index=True, right_index=True)[self.xmin:self.xmax]
+            if self.app.resampleCheckBox.isChecked():
+                join = join.resample('1M').mean()
+            join = join[join.modelled.notnull() & join.observed.notnull()]
+            ns = 1 - (((join.modelled - join.observed) ** 2).sum() / (
+                    (join.observed - join.observed.mean()) ** 2).sum())
+
+            line.set_label('{} ({:.2f})'.format(line.get_label().split(' ')[0], ns))
+
+        self.legend = self.axes.legend()
+
+
+
+    def update_data(self):
+
+        self.clear_plot()
+        self.plot_observed()
+
+        if not self.app.differenceCheckBox.isChecked():
+            self.plot_models()
+
+        else:
+            self.plot_difference()
+
+        if self.app.variable.name == 'ph_depth' and not self.axes.yaxis_inverted():
             self.axes.invert_yaxis()
-        elif variable_name != 'ph_depth' and self.axes.yaxis_inverted():
+        elif self.app.variable.name != 'ph_depth' and self.axes.yaxis_inverted():
             self.axes.invert_yaxis()
 
         self.set_backgroud()
@@ -114,10 +132,12 @@ class PlotCanvas(FigureCanvas):
         self.axes.relim()
         self.axes.autoscale_view()
 
-        self.axes.set_title('Element {} - {:.2f} m {}'.format(element.number, element.elevation, element.location))
-        self.axes.set_ylabel(variables[0].long_name)
+        self.axes.set_title('Element {} - {:.2f} m {}'.format(self.app.element.number,
+                                                              self.app.element.elevation,
+                                                              self.app.element.location))
+        self.axes.set_ylabel(self.app.variables[0].long_name)
         self.axes.set_xlabel('Time')
-        if len(self.lines) > 1 or difference is not None:
+        if len(self.lines) > 1 or self.app.differenceCheckBox.isChecked():
             self.legend = self.axes.legend()
         elif self.legend:
             self.legend.remove()
@@ -133,15 +153,10 @@ class PlotCanvas(FigureCanvas):
         self.set_backgroud()
         self.sm.set_norm(norm)
         self.set_x_limits()
-        if self.series_path:
-            self.update_data(series_path=self.series_path, resample=self.resample)
 
     def set_zoom(self, value):
         self.zoom_level = value
         self.set_x_limits()
-
-        if self.series_path:
-            self.update_data(series_path=self.series_path, resample=self.resample)
 
     def set_x_limits(self):
         if not self.time:
@@ -167,6 +182,9 @@ class PlotCanvas(FigureCanvas):
             xmin -= diff
 
         self.axes.set_xlim(xmin, xmax)
-        self.draw()
 
-        return xmin, xmax
+        self.xmin = xmin
+        self.xmax = xmax
+
+        self.calculate_nse()
+        self.draw()
