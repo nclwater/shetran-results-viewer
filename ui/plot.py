@@ -22,6 +22,7 @@ class PlotCanvas(FigureCanvas):
         self.legend = None
         self.series_path = None
         self.difference = None
+        self.resample = None
 
         FigureCanvas.__init__(self, self.fig)
         self.setStyleSheet("background-color:transparent;")
@@ -40,6 +41,7 @@ class PlotCanvas(FigureCanvas):
 
         self.series_path = series_path
         self.difference = difference
+        self.resample = resample
 
         for line in self.lines:
             self.axes.lines.remove(line)
@@ -58,7 +60,7 @@ class PlotCanvas(FigureCanvas):
                 end = min(max(variables[0].times), max(series.index))
                 series = series.sort_index().loc[start:end].rename('observed')
                 if resample and (series.index[1] - series.index[0]) < pd.Timedelta(days=28):
-                    series = series.resample('1M')
+                    series = series.resample('1M').mean()
                 series.plot(ax=self.axes, label='Observed', color='C{}'.format(len(variables)))
                 self.lines.append(self.axes.lines[-1])
             except:
@@ -132,14 +134,14 @@ class PlotCanvas(FigureCanvas):
         self.sm.set_norm(norm)
         self.set_x_limits()
         if self.series_path:
-            self.update_data(series_path=self.series_path)
+            self.update_data(series_path=self.series_path, resample=self.resample)
 
     def set_zoom(self, value):
         self.zoom_level = value
         self.set_x_limits()
 
         if self.series_path:
-            self.update_data(series_path=self.series_path)
+            self.update_data(series_path=self.series_path, resample=self.resample)
 
     def set_x_limits(self):
         if not self.time:

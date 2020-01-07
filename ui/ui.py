@@ -193,7 +193,7 @@ class App(QMainWindow):
             break
 
         if self.droppedPath.endswith('.csv'):
-            self.plotCanvas.update_data(series_path=self.droppedPath)
+            self.update_data(element=self.element, series_path=self.droppedPath)
             self.difference.setChecked(False)
             self.differenceDropDown.setEnabled(False)
         elif self.droppedPath.endswith('.xml'):
@@ -290,7 +290,7 @@ class App(QMainWindow):
         self.set_time(self.time)
 
     def update_resample(self):
-        self.update_data(self.element)
+        self.update_data(self.element, self.plotCanvas.series_path)
 
     def update_data(self, element, series_path=None):
         self.element = element
@@ -327,7 +327,7 @@ class App(QMainWindow):
             self.mapCanvas.show_land()
             self.element = self.mapCanvas.land_elements[0]
 
-        self.update_data(self.element)
+        self.update_data(self.element, series_path=None)
 
     def on_load(self):
         self.progress.hide()
