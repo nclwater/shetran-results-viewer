@@ -58,7 +58,7 @@ exe = EXE(pyz,
           name=name,
           debug=False,
           strip=False,
-          upx=True,
+          upx=False,
           runtime_tmpdir=None,
           console=False)
 
@@ -67,7 +67,7 @@ coll = COLLECT(exe,
                a.zipfiles,
                a.datas,
                strip=False,
-               upx=True,
+               upx=False,
                name=name)
 
 exe = EXE(pyz,
@@ -76,7 +76,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name=name,
-          upx=True,
+          upx=False,
           strip=False,
           console=False,
           debug=False)
