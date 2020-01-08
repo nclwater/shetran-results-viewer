@@ -292,7 +292,7 @@ class App(QMainWindow):
 
             try:
                 self.series = pd.read_csv(series_path, usecols=[0, 1], index_col=0, squeeze=True)
-                self.series.index = pd.DatetimeIndex(pd.to_datetime(self.series.index))
+                self.series.index = pd.DatetimeIndex(pd.to_datetime(self.series.index, dayfirst=True))
 
                 start = max(min(self.variables[0].times), min(self.series.index))
                 end = min(max(self.variables[0].times), max(self.series.index))
