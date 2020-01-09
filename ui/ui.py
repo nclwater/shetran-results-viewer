@@ -199,7 +199,7 @@ class App(QMainWindow):
             break
 
         if self.droppedPath.endswith('.csv'):
-            self.add_series(self.droppedPath)
+            self.add_series()
 
         elif self.droppedPath.endswith('.xml'):
             self.add_model()
@@ -279,14 +279,18 @@ class App(QMainWindow):
         self.series = None
         self.update_data(self.element)
 
-    def add_series(self, series_path=None):
-        if series_path is None:
+    def add_series(self):
+        if self.droppedPath is None:
             series_path = QFileDialog.getOpenFileName(
                 self,
                 'Choose a CSV file',
                 "",
                 "CSV files (*.csv);;All Files (*)",
                 options=QFileDialog.Options())[0]
+
+        else:
+            series_path = self.droppedPath
+            self.droppedPath = None
 
         if os.path.exists(series_path):
 
