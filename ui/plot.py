@@ -42,6 +42,7 @@ class PlotCanvas(FigureCanvas):
         self.lines = []
         if self.observed is not None:
             self.axes.lines.remove(self.observed)
+            self.observed = None
 
     def plot_observed(self):
 
@@ -66,7 +67,7 @@ class PlotCanvas(FigureCanvas):
         difference = pd.Series(var1.get_element(self.app.element.number) - var2.get_element(self.app.element.number),
                                index=var1.times)
         if self.app.resampleCheckBox.isChecked() and (difference.index[1] - difference.index[0]) < pd.Timedelta(days=28):
-            difference = difference.resample('1M')
+            difference = difference.resample('1M').mean()
         difference.plot(ax=self.axes, color='C0', label='{} - {}'.format(var1.hdf.model.name, var2.hdf.model.name))
         self.lines.append(self.axes.lines[-1])
 
