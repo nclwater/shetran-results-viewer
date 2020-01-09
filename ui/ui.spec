@@ -4,7 +4,7 @@ from PyInstaller.utils.hooks import collect_data_files
 import pyqtlet
 import os
 
-version = '1.6.0'
+version = '1.6.1'
 
 osgeo_binaries = collect_data_files('osgeo', include_py_files=True)
 
