@@ -136,6 +136,8 @@ class PlotCanvas(FigureCanvas):
         self.plot_observed()
         if self.app.outletCheckBox.isChecked():
             self.plot_discharge()
+            self.axes.set_title('Discharge at the Outlet')
+            self.axes.set_ylabel('Discharge $(m^3/s)$')
             if self.axes.yaxis_inverted():
                 self.axes.invert_yaxis()
         else:
@@ -154,12 +156,13 @@ class PlotCanvas(FigureCanvas):
                                                                   self.app.element.elevation,
                                                                   self.app.element.location))
 
+            self.axes.set_ylabel(self.app.variables[0].long_name)
+
         self.set_backgroud()
 
         self.axes.relim()
         self.axes.autoscale_view()
 
-        self.axes.set_ylabel(self.app.variables[0].long_name)
         self.axes.set_xlabel('Time')
         if len(self.lines) > 1 or self.app.differenceCheckBox.isChecked():
             self.legend = self.axes.legend()
