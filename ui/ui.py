@@ -336,10 +336,12 @@ class App(QMainWindow):
 
     def update_outlet(self):
         if self.outletCheckBox.isChecked():
+            self.download_button.setEnabled(False)
             self.plotCanvas.update_data()
             self.disable_clicking = True
 
         else:
+            self.download_button.setEnabled(True)
             self.disable_clicking = False
 
         self.switch_elements()
