@@ -113,8 +113,12 @@ class App(QMainWindow):
         self.resampleCheckBox = QCheckBox('Plot Monthly Means')
         self.resampleCheckBox.stateChanged.connect(self.update_resample)
 
+        self.outletCheckBox = QCheckBox('Outlet Discharge')
+        self.outletCheckBox.stateChanged.connect(self.update_outlet)
+
         row2.addWidget(self.progress)
         row3.addWidget(self.resampleCheckBox)
+        row3.addWidget(self.outletCheckBox)
         row3.addWidget(self.slider)
 
         self.setWindowTitle(self.title)
@@ -307,6 +311,10 @@ class App(QMainWindow):
             except:
                 self.series = None
                 print('Could not read series')
+                import traceback
+                msg = QMessageBox()
+                msg.setText(traceback.format_exc())
+                msg.exec_()
 
 
 
@@ -323,6 +331,9 @@ class App(QMainWindow):
 
     def update_resample(self):
         self.update_data(self.element)
+
+    def update_outlet(self):
+        pass
 
     def update_data(self, element):
         self.element = element

@@ -93,6 +93,22 @@ class PlotCanvas(FigureCanvas):
 
             self.lines.append(self.axes.lines[-1])
 
+    def plot_discharge(self):
+        self.model_values = []
+
+        for i, var in enumerate(self.app.variables):
+            s = pd.read_csv(var.hdf.model.path('output_{}_discharge_sim_regulartimestep.txt'.format(
+                var.hdf.model.catchment_name)), squeeze=True)
+
+            s.name = 'modelled'
+
+            s.index = pd.date_range(start=var.hdf.model.start_date, periods=len(s), freq='1D')
+
+            s.plot(color='C{}'.format(i), ax=self.axes, label=var.hdf.model.name)
+
+            self.lines.append(self.axes.lines[-1])
+            self.model_values.append(s)
+
     def calculate_nse(self):
         if self.observed is None:
             return
@@ -115,26 +131,29 @@ class PlotCanvas(FigureCanvas):
 
         self.clear_plot()
         self.plot_observed()
-
-        if not self.app.differenceCheckBox.isChecked():
-            self.plot_models()
-
+        if self.app.outletCheckBox.isChecked():
+            self.plot_discharge()
         else:
-            self.plot_difference()
+            if not self.app.differenceCheckBox.isChecked():
+                self.plot_models()
 
-        if self.app.variable.name == 'ph_depth' and not self.axes.yaxis_inverted():
-            self.axes.invert_yaxis()
-        elif self.app.variable.name != 'ph_depth' and self.axes.yaxis_inverted():
-            self.axes.invert_yaxis()
+            else:
+                self.plot_difference()
+
+            if self.app.variable.name == 'ph_depth' and not self.axes.yaxis_inverted():
+                self.axes.invert_yaxis()
+            elif self.app.variable.name != 'ph_depth' and self.axes.yaxis_inverted():
+                self.axes.invert_yaxis()
+
+            self.axes.set_title('Element {} - {:.2f} m {}'.format(self.app.element.number,
+                                                                  self.app.element.elevation,
+                                                                  self.app.element.location))
 
         self.set_backgroud()
 
         self.axes.relim()
         self.axes.autoscale_view()
 
-        self.axes.set_title('Element {} - {:.2f} m {}'.format(self.app.element.number,
-                                                              self.app.element.elevation,
-                                                              self.app.element.location))
         self.axes.set_ylabel(self.app.variables[0].long_name)
         self.axes.set_xlabel('Time')
         if len(self.lines) > 1 or self.app.differenceCheckBox.isChecked():
