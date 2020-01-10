@@ -27,6 +27,8 @@ class App(QMainWindow):
         self.variables = None
         self.variable = None
 
+        self.disable_clicking = False
+
         self.modelDropDown = QComboBox()
         self.modelDropDown.activated.connect(self.set_model)
 
@@ -333,11 +335,19 @@ class App(QMainWindow):
         self.update_data(self.element)
 
     def update_outlet(self):
-        pass
+        if self.outletCheckBox.isChecked():
+            self.update_data(self.element)
+            self.disable_clicking = True
+
+        else:
+            self.disable_clicking = False
+
+        self.switch_elements()
 
     def update_data(self, element):
-        self.element = element
-        self.plotCanvas.update_data()
+        if not self.disable_clicking:
+            self.element = element
+            self.plotCanvas.update_data()
 
     def set_hover(self):
         class Thread(QThread):

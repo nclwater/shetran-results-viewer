@@ -98,6 +98,9 @@ class MapCanvas(QFrame):
         if self.element is not None:
             self.element.update_style({'weight': self.element.default_weight})
 
+        if self.app.disable_clicking:
+            return
+
         self.element = element
         element.update_style({'weight': 3})
 
@@ -116,6 +119,11 @@ class MapCanvas(QFrame):
             self.group.addLayer(element)
         self.visible_elements = self.river_elements
         self.select_element(self.river_elements[0])
+
+    def set_elements_enabled(self):
+        for element in self.elements:
+            element.runJavaScript("{}.interactive = false".format(element.jsName))
+
 
     def set_time(self, time, variable, difference=None):
         values = variable.get_time(time)
