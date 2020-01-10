@@ -160,7 +160,7 @@ class App(QMainWindow):
         row4.setCollapsible(1, False)
 
         self.mapCanvas.progress.connect(self.set_progress)
-        self.mapCanvas.clickedElement.connect(self.update_data)
+        self.mapCanvas.clickedElement.connect(self.update_element)
         self.mapCanvas.loaded.connect(self.on_load)
 
         self.mapCanvas.add_data(self.model)
@@ -263,7 +263,7 @@ class App(QMainWindow):
             idx = self.modelDropDown.currentIndex()
             self.modelDropDown.setItemText(idx, '{} - {}'.format(self.model.name, self.model.library))
             self.differenceDropDown.setItemText(idx, self.model.name)
-            self.update_data(self.element)
+            self.plotCanvas.update_data()
 
 
     def remove_model(self):
@@ -283,7 +283,7 @@ class App(QMainWindow):
                                 self.variables[self.differenceDropDown.currentIndex()]
                                 if self.differenceCheckBox.isChecked() else None)
         self.series = None
-        self.update_data(self.element)
+        self.plotCanvas.update_data()
 
     def add_series(self):
         if self.droppedPath is None:
@@ -309,7 +309,7 @@ class App(QMainWindow):
                 self.series = self.series.sort_index().loc[start:end].rename('observed')
                 self.differenceCheckBox.setChecked(False)
                 self.differenceDropDown.setEnabled(False)
-                self.update_data(self.element)
+                self.plotCanvas.update_data()
             except:
                 self.series = None
                 print('Could not read series')
@@ -322,7 +322,7 @@ class App(QMainWindow):
 
     def clear_series(self):
         self.series = None
-        self.update_data(self.element)
+        self.plotCanvas.update_data()
 
     def set_variables(self, variable_index):
         self.variables = [model.hdf.spatial_variables[variable_index] for model in self.models]
@@ -332,11 +332,11 @@ class App(QMainWindow):
         self.set_time(self.time)
 
     def update_resample(self):
-        self.update_data(self.element)
+        self.plotCanvas.update_data()
 
     def update_outlet(self):
         if self.outletCheckBox.isChecked():
-            self.update_data(self.element)
+            self.plotCanvas.update_data()
             self.disable_clicking = True
 
         else:
@@ -344,7 +344,7 @@ class App(QMainWindow):
 
         self.switch_elements()
 
-    def update_data(self, element):
+    def update_element(self, element):
         if not self.disable_clicking:
             self.element = element
             self.plotCanvas.update_data()
@@ -374,7 +374,7 @@ class App(QMainWindow):
             self.mapCanvas.show_land()
             self.element = self.mapCanvas.land_elements[0]
 
-        self.update_data(self.element)
+        self.plotCanvas.update_data()
 
     def on_load(self):
         self.progress.hide()
@@ -415,7 +415,7 @@ class App(QMainWindow):
         self.model = self.models[self.modelDropDown.currentIndex()]
         self.variable = self.variables[self.modelDropDown.currentIndex()]
         if self.differenceDropDown.isEnabled():
-            self.update_data(self.element)
+            self.plotCanvas.update_data()
         self.set_time(self.time)
 
 

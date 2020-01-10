@@ -104,6 +104,9 @@ class PlotCanvas(FigureCanvas):
 
             s.index = pd.date_range(start=var.hdf.model.start_date, periods=len(s), freq='1D')
 
+            if self.app.resampleCheckBox.isChecked():
+                s = s.resample('1M').mean()
+
             s.plot(color='C{}'.format(i), ax=self.axes, label=var.hdf.model.name)
 
             self.lines.append(self.axes.lines[-1])
@@ -133,6 +136,8 @@ class PlotCanvas(FigureCanvas):
         self.plot_observed()
         if self.app.outletCheckBox.isChecked():
             self.plot_discharge()
+            if self.axes.yaxis_inverted():
+                self.axes.invert_yaxis()
         else:
             if not self.app.differenceCheckBox.isChecked():
                 self.plot_models()
