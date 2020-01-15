@@ -116,7 +116,7 @@ class PlotCanvas(FigureCanvas):
         if self.observed is None:
             return
 
-        for model_values, line in zip(self.model_values, self.lines):
+        for model_values, line, variable in zip(self.model_values, self.lines, self.app.variables):
 
             join = pd.merge_asof(model_values, self.app.series.resample('1M').mean() if self.app.resampleCheckBox.isChecked() else self.app.series, left_index=True, right_index=True, )[self.xmin:self.xmax]
 
@@ -124,7 +124,7 @@ class PlotCanvas(FigureCanvas):
 
             ns = 1 - (((join.modelled - join.observed) ** 2).sum() / ((join.observed - join.observed.mean()) ** 2).sum())
 
-            line.set_label('{} ({:.2f})'.format(line.get_label().split(' ')[0], ns))
+            line.set_label('{} ({:.2f})'.format(variable.hdf.model.name, ns))
 
         self.legend = self.axes.legend()
 
