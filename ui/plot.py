@@ -102,7 +102,8 @@ class PlotCanvas(FigureCanvas):
 
             s.name = 'modelled'
 
-            s.index = pd.date_range(start=var.hdf.model.start_date, periods=len(s), freq='1D')
+            s.index = pd.date_range(start=var.hdf.model.start_date, periods=len(s),
+                                    freq='{}H'.format(var.hdf.model.get('SimulatedDischargeTimestep')))
 
             if self.app.resampleCheckBox.isChecked():
                 s = s.resample('1M').mean()
