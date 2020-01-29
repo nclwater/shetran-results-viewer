@@ -68,7 +68,7 @@ class MapCanvas(QFrame):
 
         prog = 0
         for geom, number in zip(geoms, model.hdf.element_numbers):
-            coords = [list(reversed(coord)) for coord in geom['coordinates'][0]]
+            coords = [list(coord) for coord in geom['coordinates'][0]]
             lat = np.mean([coord[0] for coord in coords[:-1]]).round(3)
             lon = np.mean([coord[1] for coord in coords[:-1]]).round(3)
             elevation = model.hdf.elevations[number-1]

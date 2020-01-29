@@ -4,7 +4,7 @@ from PyInstaller.utils.hooks import collect_data_files
 import pyqtlet
 import os
 
-version = '1.6.4'
+version = '1.6.5'
 
 osgeo_binaries = collect_data_files('osgeo', include_py_files=True)
 
@@ -21,6 +21,7 @@ a = Analysis(['ui.py', 'ui.spec'],
              datas=[(os.path.dirname(pyqtlet.__file__), 'pyqtlet')],
              runtime_hooks=[],
              excludes=[],
+             hiddenimports=['pkg_resources.py2_warn'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher,
