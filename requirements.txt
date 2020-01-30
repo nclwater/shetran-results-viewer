@@ -1,0 +1,11 @@
+PyInstaller
+numpy
+pandas
+h5py
+GDAL
+matplotlib
+PyQt5
+beautifulsoup4
+pyqtlet
+pyqtwebengine
+shetranio
