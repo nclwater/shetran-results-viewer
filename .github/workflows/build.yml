@@ -34,11 +34,14 @@ jobs:
 
       - name: Install dependencies
         run: |
+          conda activate shetran-results-viewer
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           conda env update -f environment.yml --no-deps
       - name: build
-        run: python -m PyInstaller -y ui/ui.spec
+        run: |
+          conda activate shetran-results-viewer
+          python -m PyInstaller -y ui/ui.spec
 
       - uses: actions/github-script@0.9.0
         name: Get version number
