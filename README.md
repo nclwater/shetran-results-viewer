@@ -14,10 +14,8 @@
 
 ## Installation
  
-Download either the standalone exe or zip file from the latest release 
-(https://github.com/nclwater/shetran-results-viewer/releases/latest). 
-The standalone exe is slower to start but more compact.
-If using the zip file, extract it and then run the exe file from the extracted directory.
+Download the latest release from https://github.com/nclwater/shetran-results-viewer/releases/latest.
+Extract it and then run the executable in the extracted directory.
 
 ## Usage
 

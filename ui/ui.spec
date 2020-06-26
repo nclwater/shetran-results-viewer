@@ -3,6 +3,8 @@
 from PyInstaller.utils.hooks import collect_data_files
 import pyqtlet
 import os
+import PyInstaller.config
+import shutil
 
 version = '1.6.7'
 
@@ -51,13 +53,6 @@ coll = COLLECT(exe,
                upx=False,
                name=name)
 
-exe = EXE(pyz,
-          a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
-          name=name,
-          upx=False,
-          strip=False,
-          console=False,
-          debug=False)
+dist_path = PyInstaller.config.CONF['distpath']
+
+shutil.make_archive('dist', 'zip', os.path.join(dist_path, name))
