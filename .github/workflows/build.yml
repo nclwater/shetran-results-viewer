@@ -26,27 +26,22 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          %CONDA%\Scripts\activate.bat
-          conda create -n shetran-results-viewer python=3.7
-          conda activate shetran-results-viewer
-          pip install -r requirements.txt
-          conda env update -f environment.yml --no-deps
-          python -m PyInstaller -y ui/ui.spec
-        shell: cmd
+      - name: set up conda
+        uses: goanpeca/setup-miniconda@v1
+        with:
+          python-version: 3.7
+          activate-environment: shetran-results-viewer
 
-      - name: mac and linux
-        if: matrix.os != 'windows-latest'
+      - name: Install dependencies
         run: |
-          $CONDA/bin/activate
-          conda create -n shetran-results-viewer python=3.7
-          $CONDA/bin/activate shetran-results-viewer
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           conda env update -f environment.yml --no-deps
-          python -m PyInstaller -y ui/ui.spec
-        shell: bash
+        shell: bash -l {0}
+
+      - name: build
+        run: python -m PyInstaller -y ui/ui.spec
+        shell: bash -l {0}
 
       - uses: actions/github-script@0.9.0
         name: Get version number
