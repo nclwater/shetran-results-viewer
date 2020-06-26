@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: windows
-        if: matrix.os == 'windows'
+        if: matrix.os == 'windows-latest'
         run: |
           %CONDA%\Scripts\activate.bat
           conda create -n shetran-results-viewer python=3.7
@@ -38,11 +38,11 @@ jobs:
         shell: cmd
 
       - name: mac and linux
-        if: matrix.os != 'windows'
+        if: matrix.os != 'windows-latest'
         run: |
           $CONDA/bin/activate
           conda create -n shetran-results-viewer python=3.7
-          conda activate shetran-results-viewer
+          $CONDA/bin/activate shetran-results-viewer
           pip install -r requirements.txt
           conda env update -f environment.yml --no-deps
           python -m PyInstaller -y ui/ui.spec
