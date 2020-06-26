@@ -3,7 +3,6 @@
 from PyInstaller.utils.hooks import collect_data_files
 import pyqtlet
 import os
-from zipfile import ZipFile
 
 version = '1.6.7'
 
@@ -62,7 +61,3 @@ exe = EXE(pyz,
           strip=False,
           console=False,
           debug=False)
-
-with ZipFile('dist.zip', mode='w') as f:
-    for path in os.listdir('dist'):
-        f.write(os.path.join('dist', path))
