@@ -30,6 +30,7 @@ jobs:
         uses: goanpeca/setup-miniconda@v1
         with:
           python-version: 3.7
+          activate-environment: shetran-results-viewer
 
       - name: Install dependencies
         run: |
