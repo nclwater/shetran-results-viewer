@@ -1,13 +1,2 @@
 dependencies:
-  - PyInstaller
-  - pandas
-  - h5py
-  - gdal
-  - matplotlib
-  - pyqt
-  - beautifulsoup4
-  - pip:
-    - pyqtlet
-    - pyqtwebengine
-    - shetranio
-
+  - gdal=3.0.2

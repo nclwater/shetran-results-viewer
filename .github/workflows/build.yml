@@ -1,0 +1,71 @@
+name: build
+
+on: push
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: SHETran Results Viewer ${{ github.ref }}
+          draft: true
+          prerelease: false
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: set up conda
+        uses: goanpeca/setup-miniconda@v1
+          with:
+            python-version: 3.7
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          conda env update -f environment.yml --no-deps
+      - name: build
+        run: python -m PyInstaller -y ui/ui.spec
+
+      - uses: actions/github-script@0.9.0
+        name: Get version number
+        id: version
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          result-encoding: string
+          script: return context.payload.ref.replace('refs/tags/', '');
+
+      - uses: actions/github-script@0.9.0
+        name: Get upload URL
+        id: upload_url
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          result-encoding: string
+          script: |
+            const result = await github.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: '${{ steps.version.outputs.result }}',
+            });
+            console.log(result.data.upload_url)
+            return result.data.upload_url
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.upload_url.outputs.result }}
+          asset_path: ./dist.zip
+          asset_name: SHETran-Results-Viewer-${{ steps.version.outputs.result }}-${{ matrix.os }}.zip
+          asset_content_type: application/octet-stream
