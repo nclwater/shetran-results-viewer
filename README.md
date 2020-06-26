@@ -56,4 +56,7 @@ Column names are ignored. Times are assumed to be in the first column and values
 
 The CSV data only persists for as long as you have the current element selected. 
 
-
+### Running from Python
+Most dependencies are in requirements.txt, GDAL and PROJ need to be installed using conda (on windows).
+There is no environment.yml as conda builds pandas with mkl and results in a larger distribution.
+See ./.github/workflows/build.yml for details.
