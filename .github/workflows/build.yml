@@ -42,7 +42,7 @@ jobs:
         shell: bash -l {0}
 
       - name: build
-        run: python -m PyInstaller -y ui/ui.spec
+        run: python -m PyInstaller -y --windowed ui/ui.spec
         shell: bash -l {0}
 
       - uses: actions/github-script@0.9.0
