@@ -5,8 +5,9 @@ import pyqtlet
 import os
 import PyInstaller.config
 import shutil
+import subprocess
 
-version = '1.6.7'
+version = subprocess.check_output(["git", "describe"]).strip()
 
 osgeo_binaries = collect_data_files('osgeo', include_py_files=True)
 
