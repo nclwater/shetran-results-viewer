@@ -348,6 +348,10 @@ class App(QMainWindow):
 
     def update_element(self, element):
         if not self.disable_clicking:
+            try:
+                self.variables[0].get_element(element.number)
+            except ValueError:
+                return
             self.element = element
             self.plotCanvas.update_data()
 
