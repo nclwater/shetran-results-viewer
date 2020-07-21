@@ -66,8 +66,16 @@ class MapCanvas(QFrame):
 
         geoms = Geometries(model.hdf, model.dem, srs=model.srid)
 
+        banks = np.concatenate((
+            model.hdf.number.north_bank,
+            model.hdf.number.west_bank,
+            model.hdf.number.east_bank,
+            model.hdf.number.south_bank))
+
         prog = 0
         for geom, number in zip(geoms, model.hdf.element_numbers):
+            if number in banks:
+                continue
             coords = [[y, x] for (x, y) in geom['coordinates'][0]]
             lat = np.mean([coord[0] for coord in coords[:-1]]).round(3)
             lon = np.mean([coord[1] for coord in coords[:-1]]).round(3)
