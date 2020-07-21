@@ -117,6 +117,12 @@ class App(QMainWindow):
 
         self.outletCheckBox = QCheckBox('Outlet Discharge')
         self.outletCheckBox.stateChanged.connect(self.update_outlet)
+        try:
+            assert self.model.get('SimulatedDischargeTimestep') is not None
+            assert os.path.exists(self.model.path('output_{}_discharge_sim_regulartimestep.txt'.format(
+                self.model.catchment_name)))
+        except AssertionError:
+            self.outletCheckBox.setDisabled(True)
 
         row2.addWidget(self.progress)
         row3.addWidget(self.resampleCheckBox)

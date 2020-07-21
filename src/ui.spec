@@ -6,7 +6,7 @@ import os
 import PyInstaller.config
 import shutil
 
-version = 'v1.7.0'
+version = 'v1.7.1'
 
 osgeo_binaries = collect_data_files('osgeo', include_py_files=True)
 
