@@ -7,4 +7,4 @@ PyQt5==5.15.0
 beautifulsoup4==4.9.1
 pyqtlet==0.3.3
 pyqtwebengine==5.15.0
-shetranio==0.3.0
+shetranio==0.4.1
