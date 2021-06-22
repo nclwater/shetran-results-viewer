@@ -29,6 +29,13 @@ class MapCanvas(QFrame):
 
         self.app = app
         self.mapWidget = MapWidget()
+
+        profile = self.mapWidget._page.profile()
+        user_agent = 'ShetranResultsViewer'
+        profile.setHttpUserAgent(user_agent)
+        self.mapWidget._page.setWebChannel(self.mapWidget._channel)
+        self.mapWidget._loadPage()
+
         QWidget.__init__(self, self.mapWidget)
         self.setParent(app)
 
